@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RYOSEI GALAXY — 部署を、ぜんぶAIにした会社</title>
+<meta name="description" content="RYOSEIWORLD合同会社のAI組織『RYOSEI GALAXY』。人間は代表1人、部署はぜんぶAIエージェント。やりたくないことを、世界から無くす。">
+<meta property="og:title" content="RYOSEI GALAXY">
+<meta property="og:description" content="会社の部署を、ぜんぶAIにした。人間は代表1人。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0f;
+    --bg2:#0e0e16;
+    --fg:#f4f4f2;
+    --sub:#a8a8b2;
+    --line:#26262f;
+    --gold:#f0c060;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:"Noto Sans JP",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:16px;
+    line-height:1.8;
+    overflow-x:hidden;
+  }
+  h1,h2,h3{font-family:"Zen Old Mincho",serif;font-weight:700;letter-spacing:.02em;}
+  a{color:var(--gold);}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:80px 24px;
+    background:var(--bg);
+    overflow:hidden;
+  }
+  .stars, .stars2, .stars3{
+    position:absolute;
+    inset:0;
+    background-repeat:repeat;
+    z-index:0;
+  }
+  .stars{
+    background-image:radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+      radial-gradient(1px 1px at 140px 90px, #fff, transparent),
+      radial-gradient(1px 1px at 260px 40px, #fff, transparent),
+      radial-gradient(1px 1px at 340px 160px, #fff, transparent),
+      radial-gradient(2px 2px at 400px 220px, #fff, transparent),
+      radial-gradient(1px 1px at 60px 200px, #fff, transparent);
+    background-size:420px 260px;
+    opacity:.5;
+    animation:drift 90s linear infinite;
+  }
+  .stars2{
+    background-image:radial-gradient(1px 1px at 80px 60px, var(--gold), transparent),
+      radial-gradient(1px 1px at 220px 180px, #fff, transparent),
+      radial-gradient(1px 1px at 360px 60px, #fff, transparent);
+    background-size:500px 320px;
+    opacity:.35;
+    animation:drift 140s linear infinite reverse;
+  }
+  @keyframes drift{
+    from{transform:translateY(0);}
+    to{transform:translateY(-600px);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stars, .stars2{animation:none;}
+    html{scroll-behavior:auto;}
+  }
+  .hero-inner{position:relative;z-index:1;}
+  .eyebrow{
+    font-size:.9rem;
+    color:var(--sub);
+    letter-spacing:.25em;
+    margin-bottom:18px;
+  }
+  .eyebrow b{color:var(--fg);font-weight:500;}
+  .hero h1{
+    font-size:clamp(2.6rem, 9vw, 5.2rem);
+    line-height:1.15;
+    background:linear-gradient(180deg, #fff 0%, var(--gold) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .hero-sub{
+    margin-top:22px;
+    font-size:1.15rem;
+    color:var(--sub);
+  }
+  .hero-line{
+    margin-top:32px;
+    font-size:1.05rem;
+    color:var(--fg);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    padding:16px 0;
+    display:inline-block;
+  }
+
+  section{padding:96px 0;border-top:1px solid var(--line);}
+  .section-head{text-align:center;margin-bottom:56px;}
+  .section-head h2{font-size:clamp(1.6rem,4vw,2.3rem);}
+  .section-head p{color:var(--sub);margin-top:10px;}
+
+  /* ---------- Org cards ---------- */
+  .org-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+    gap:20px;
+  }
+  .card{
+    background:var(--bg2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:26px 24px;
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .card:hover{border-color:var(--gold);transform:translateY(-2px);}
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .card h3{font-size:1.15rem;}
+  .agent-name{
+    font-size:.85rem;
+    color:var(--gold);
+    margin-bottom:12px;
+    font-family:"Noto Sans JP",sans-serif;
+    letter-spacing:.02em;
+  }
+  .card p.desc{color:var(--sub);font-size:.95rem;line-height:1.75;}
+  .badge{
+    flex-shrink:0;
+    font-size:.72rem;
+    letter-spacing:.05em;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    white-space:nowrap;
+  }
+  .badge-live{color:var(--gold);border-color:var(--gold);}
+  .badge-proto{color:var(--fg);border-color:var(--sub);}
+  .badge-concept{color:var(--sub);}
+  .cn-line{
+    margin-top:10px;
+    font-size:.85rem;
+    color:var(--sub);
+    font-style:normal;
+  }
+
+  /* ---------- How it works ---------- */
+  .steps{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:24px;
+  }
+  .step{
+    border:1px solid var(--line);
+    padding:28px 24px;
+    position:relative;
+  }
+  .step .num{
+    font-family:"Zen Old Mincho",serif;
+    font-size:2.4rem;
+    color:var(--gold);
+    line-height:1;
+    margin-bottom:14px;
+  }
+  .step h3{font-size:1.05rem;margin-bottom:10px;}
+  .step p{color:var(--sub);font-size:.95rem;}
+
+  /* ---------- Promo ---------- */
+  #promo .video-frame{
+    border:1px solid var(--line);
+    background:var(--bg2);
+    aspect-ratio:16/9;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  #promo video{width:100%;height:100%;object-fit:cover;display:block;}
+  .video-placeholder{
+    color:var(--sub);
+    font-size:.95rem;
+    letter-spacing:.1em;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    padding:56px 0;
+    border-top:1px solid var(--line);
+    text-align:center;
+    color:var(--sub);
+    font-size:.9rem;
+  }
+  footer .brand{
+    font-family:"Zen Old Mincho",serif;
+    color:var(--fg);
+    font-size:1.1rem;
+    margin-bottom:14px;
+  }
+  footer p{margin:4px 0;}
+  footer a{color:var(--sub);text-decoration:underline;}
+  footer a:hover{color:var(--gold);}
+
+  @media (max-width:480px){
+    section{padding:64px 0;}
+    .hero{padding:60px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="stars" aria-hidden="true"></div>
+  <div class="stars2" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <p class="eyebrow"><b>RYOSEIWORLD</b> →</p>
+    <h1>RYOSEI GALAXY</h1>
+    <p class="hero-sub">会社の部署を、ぜんぶAIにした。人間は代表1人。</p>
+    <p class="hero-line">やりたくないことを、世界から無くす。</p>
+  </div>
+</header>
+
+<section id="org">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>組織図</h2>
+      <p>各部署の担当はすべてAIエージェント。稼働状況を正直に表示しています。</p>
+    </div>
+    <div class="org-grid">
+
+      <div class="card">
+        <div class="card-top">
+          <h3>謝罪部（ごめん！部）</h3>
+          <span class="badge badge-proto">試作中</span>
+        </div>
+        <p class="agent-name">担当AI: あやまり係</p>
+        <p class="desc">苦情・ミスの一報を最初に受け止め、即座に誠実に謝罪。原因の切り分けと担当部署への振り分けまで行う。人間は「謝る役」から解放される。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>中国AI事業部</h3>
+          <span class="badge badge-concept">構想中</span>
+        </div>
+        <p class="agent-name">担当AI: 通訳商談係</p>
+        <p class="desc">中国市場向け。問い合わせ・商談・見積・納品連絡まで、中国語⇄日本語のやりとりをAIが担当。物販ではアリババ系の売れ筋データと仕入れ先の突合も行う。</p>
+        <p class="cn-line">所有沟通，全部由AI完成。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>ライブコマース部</h3>
+          <span class="badge badge-concept">構想中</span>
+        </div>
+        <p class="agent-name">担当AI: 口紅王子（AI司会）</p>
+        <p class="desc">ライブ配信で商品を紹介し、視聴者の質問に即答、即決へ導く。24時間配信が可能。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>GALAXYマーケット部</h3>
+          <span class="badge badge-concept">構想中</span>
+        </div>
+        <p class="agent-name">担当AI: 店舗運営係</p>
+        <p class="desc">プラットフォームに店舗が入居する形式。各店舗にAI店員が付き、接客・在庫・注文管理をまとめて回す。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>営業部</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: eigyo</p>
+        <p class="desc">リードを診断し、1社ごとに違う文面を作成して下書きまで用意する。送信ボタンは人が押す。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>広報部</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: kouhou</p>
+        <p class="desc">X・LINE・メールの文面を下書きし、投稿は事後報告する運用。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>経理部</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: zeirishi</p>
+        <p class="desc">見積書・請求書PDF・帳簿の下ごしらえを担当する。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>開発部</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: builder / Codex</p>
+        <p class="desc">決められた仕様どおりに実装する。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>検品部</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: checker</p>
+        <p class="desc">実ブラウザで「本当に動くか」だけを確かめる。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>調査部</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: scout</p>
+        <p class="desc">案件の棚卸しと下調べを担当する。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3>依頼台帳</h3>
+          <span class="badge badge-live">稼働中</span>
+        </div>
+        <p class="agent-name">担当AI: irai</p>
+        <p class="desc">全部署が読み書きする1本の台帳。依頼をやり残さない仕組み。</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>動き方</h2>
+      <p>司令塔と各部署AIの役割を分ける、シンプルな3ステップ。</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">01</div>
+        <h3>司令塔が決める</h3>
+        <p>代表とメインAIが設計・検品・不可逆な操作だけを担う。実作業は自分で手を動かさない。</p>
+      </div>
+      <div class="step">
+        <div class="num">02</div>
+        <h3>各部署AIへ並列で委任</h3>
+        <p>調査・実装・検証・広報などを、それぞれの部署AIに同時に振り分けて進める。</p>
+      </div>
+      <div class="step">
+        <div class="num">03</div>
+        <h3>3行＋画像で報告</h3>
+        <p>成果物は必ず実画面つきで、短く事実だけを報告する。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="promo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>プロモーション動画</h2>
+      <p>RYOSEI GALAXYの紹介動画</p>
+    </div>
+    <div class="video-frame" id="videoFrame">
+      <video controls playsinline
+        onerror="document.getElementById('videoFrame').innerHTML='<p class=&quot;video-placeholder&quot;>動画準備中</p>'">
+        <source src="promo.mp4" type="video/mp4">
+      </video>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="brand">RYOSEIWORLD合同会社</p>
+    <p>代表 今井涼晴</p>
+    <p>東京都渋谷区恵比寿西2-4-8 ウィンド恵比寿ビル8F</p>
+    <p><a href="https://ryoseiworld.co.jp/" target="_blank" rel="noopener">https://ryoseiworld.co.jp/</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
