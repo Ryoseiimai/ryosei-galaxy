@@ -52,7 +52,7 @@ def parse_ts(ts_str):
 def count_active_ai_processes():
     try:
         out = subprocess.run(
-            ["pgrep", "-f", "claude"], capture_output=True, text=True, timeout=5
+            ["pgrep", "-x", "claude"], capture_output=True, text=True, timeout=5
         ).stdout
         lines = [l for l in out.splitlines() if l.strip()]
         return len(lines)
