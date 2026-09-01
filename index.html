@@ -226,6 +226,87 @@
     section{padding:64px 0;}
     .hero{padding:60px 20px;}
   }
+
+  /* ---------- Live feed ---------- */
+  .live-band{
+    display:none;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    background:var(--bg2);
+    padding:20px 0;
+  }
+  .live-band.is-visible{display:block;}
+  .live-band-inner{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:14px;
+    font-size:.92rem;
+    color:var(--sub);
+  }
+  .live-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:var(--gold);
+    flex-shrink:0;
+    animation:live-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes live-pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:.25;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .live-dot{animation:none;}
+  }
+  .live-stats b{color:var(--fg);font-weight:500;}
+  .live-updated{
+    margin-left:auto;
+    font-size:.8rem;
+    color:var(--sub);
+    opacity:.8;
+  }
+  .live-feed-wrap{display:none;}
+  .live-feed-wrap.is-visible{display:block;}
+  .live-feed{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 24px 96px;
+  }
+  .live-feed ul{
+    list-style:none;
+    border-top:1px solid var(--line);
+  }
+  .live-feed li{
+    display:flex;
+    gap:16px;
+    padding:11px 0;
+    border-bottom:1px solid var(--line);
+    font-size:.9rem;
+  }
+  .live-feed time{
+    color:var(--gold);
+    flex-shrink:0;
+    font-variant-numeric:tabular-nums;
+  }
+  .live-feed .label{color:var(--sub);}
+  .live-more{
+    margin-top:16px;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--sub);
+    padding:8px 18px;
+    font-size:.85rem;
+    cursor:pointer;
+    border-radius:999px;
+  }
+  .live-more:hover{border-color:var(--gold);color:var(--gold);}
+  .today-badge{
+    font-size:.72rem;
+    color:var(--gold);
+    margin-left:8px;
+    letter-spacing:.02em;
+  }
 </style>
 </head>
 <body>
@@ -240,6 +321,21 @@
     <p class="hero-line">やりたくないことを、世界から無くす。</p>
   </div>
 </header>
+
+<div class="live-band" id="liveBand">
+  <div class="wrap live-band-inner">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="live-stats" id="liveStats"></span>
+    <span class="live-updated" id="liveUpdated"></span>
+  </div>
+</div>
+
+<div class="live-feed-wrap" id="liveFeedWrap">
+  <div class="live-feed">
+    <ul id="liveFeedList"></ul>
+    <button class="live-more" id="liveMoreBtn" type="button" hidden>もっと見る</button>
+  </div>
+</div>
 
 <section id="org">
   <div class="wrap">
@@ -342,7 +438,7 @@
 
       <div class="card">
         <div class="card-top">
-          <h3>依頼台帳</h3>
+          <h3>依頼台帳<span class="today-badge" id="iraiTodayBadge"></span></h3>
           <span class="badge badge-live">稼働中</span>
         </div>
         <p class="agent-name">担当AI: irai</p>
@@ -402,6 +498,111 @@
     <p><a href="https://ryoseiworld.co.jp/" target="_blank" rel="noopener">https://ryoseiworld.co.jp/</a></p>
   </div>
 </footer>
+
+<script>
+(function(){
+  var FEED_STEP = 10;
+  var lastData = null;
+  var shownCount = FEED_STEP;
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function fmtTime(iso){
+    try{
+      var d = new Date(iso);
+      if(isNaN(d.getTime())) return '';
+      var mm = String(d.getMonth()+1).padStart(2,'0');
+      var dd = String(d.getDate()).padStart(2,'0');
+      var hh = String(d.getHours()).padStart(2,'0');
+      var mi = String(d.getMinutes()).padStart(2,'0');
+      return mm+'/'+dd+' '+hh+':'+mi;
+    }catch(e){ return ''; }
+  }
+
+  function render(data){
+    if(!data || typeof data !== 'object') return;
+    lastData = data;
+
+    var band = document.getElementById('liveBand');
+    var feedWrap = document.getElementById('liveFeedWrap');
+    var statsEl = document.getElementById('liveStats');
+    var updatedEl = document.getElementById('liveUpdated');
+    var listEl = document.getElementById('liveFeedList');
+    var moreBtn = document.getElementById('liveMoreBtn');
+    var todayBadge = document.getElementById('iraiTodayBadge');
+
+    var today = data.today || {};
+    var received = Number(today.received) || 0;
+    var started = Number(today.started) || 0;
+    var done = Number(today.done) || 0;
+    var totalDone = Number(data.total_done) || 0;
+    var activeNow = Number(data.active_now) || 0;
+
+    statsEl.innerHTML =
+      '今日: 受理<b>' + received + '</b>件・着手<b>' + started + '</b>件・完了<b>' + done + '</b>件　／　' +
+      '累計完了<b>' + totalDone + '</b>件　／　稼働中のAIプロセス<b>' + activeNow + '</b>';
+
+    if(data.updated_at){
+      var t = fmtTime(data.updated_at);
+      updatedEl.textContent = t ? ('最終更新 ' + t) : '';
+    }
+
+    if(todayBadge){
+      todayBadge.textContent = '本日 受理' + received + '/着手' + started + '/完了' + done;
+    }
+
+    var feed = Array.isArray(data.feed) ? data.feed : [];
+    listEl.innerHTML = '';
+    feed.slice(0, shownCount).forEach(function(item){
+      if(!item || !item.ts || !item.label) return;
+      var li = document.createElement('li');
+      var time = document.createElement('time');
+      time.textContent = fmtTime(item.ts);
+      var label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = item.label;
+      li.appendChild(time);
+      li.appendChild(label);
+      listEl.appendChild(li);
+    });
+
+    if(feed.length > shownCount){
+      moreBtn.hidden = false;
+    } else {
+      moreBtn.hidden = true;
+    }
+
+    band.classList.add('is-visible');
+    if(feed.length > 0){
+      feedWrap.classList.add('is-visible');
+    }
+  }
+
+  function fetchActivity(){
+    fetch('activity.json', {cache:'no-store'})
+      .then(function(res){
+        if(!res.ok) throw new Error('not ok');
+        return res.json();
+      })
+      .then(render)
+      .catch(function(){
+        // 取得失敗・ファイル欠如: 帯とフィードは非表示のまま何もしない
+      });
+  }
+
+  document.getElementById('liveMoreBtn').addEventListener('click', function(){
+    shownCount += FEED_STEP;
+    if(lastData) render(lastData);
+  });
+
+  fetchActivity();
+  setInterval(fetchActivity, 60000);
+})();
+</script>
 
 </body>
 </html>
