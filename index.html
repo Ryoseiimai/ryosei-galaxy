@@ -512,52 +512,83 @@
   var bgParticles = [];
   function initBgParticles(){
     var area = W * H;
-    var base = Math.round(area / 5200);
-    var count = reduceMotion ? Math.round(base * 0.35) : base;
-    count = Math.max(60, Math.min(count, 420));
+    var isMobile = W < 600;
+    var base = Math.round(area / 340);
+    var count = reduceMotion ? Math.round(base * 0.3) : base;
+    count = isMobile ? Math.max(600, Math.min(count, 1000)) : Math.max(2000, Math.min(count, 4000));
     bgParticles = [];
     for(var i=0;i<count;i++){
       bgParticles.push({
         x: Math.random()*W,
         y: Math.random()*H,
-        r: Math.random()*1.3 + 0.3,
-        a: Math.random()*0.5 + 0.15,
+        r: Math.random()*1.4 + 0.3,
+        a: Math.random()*0.55 + 0.15,
         vx: (Math.random()-0.5)*0.06,
         vy: (Math.random()-0.5)*0.06,
         tw: Math.random()*Math.PI*2,
-        gold: Math.random() < 0.12
+        gold: Math.random() < 0.14
       });
     }
   }
 
-  /* ================= 部署ノード（軌道） ================= */
+  /* ================= 星雲レイヤー（背景の帯） ================= */
+  var NEBULAE = [
+    {dx:-0.22, dy:-0.14, rr:0.62, color:'240,192,96', baseA:0.10, speed:0.000006, phase:0},
+    {dx:0.28,  dy:0.10,  rr:0.55, color:'255,255,255', baseA:0.055, speed:-0.000009, phase:2.1},
+    {dx:0.02,  dy:0.30,  rr:0.5,  color:'240,192,96', baseA:0.08, speed:0.000011, phase:4.4}
+  ];
+  function drawNebulae(now){
+    var minSide = Math.min(W, H);
+    NEBULAE.forEach(function(neb){
+      var ang = now * neb.speed + neb.phase;
+      var swirl = 0.06;
+      var nx = CX + (neb.dx + Math.cos(ang)*swirl) * W;
+      var ny = CY + (neb.dy + Math.sin(ang)*swirl) * H;
+      var breathe = 0.85 + 0.15*Math.sin(now*0.00018 + neb.phase);
+      var radius = minSide * neb.rr * breathe;
+      var g = ctx.createRadialGradient(nx, ny, 0, nx, ny, radius);
+      g.addColorStop(0, 'rgba(' + neb.color + ',' + neb.baseA + ')');
+      g.addColorStop(0.55, 'rgba(' + neb.color + ',' + (neb.baseA*0.4) + ')');
+      g.addColorStop(1, 'rgba(' + neb.color + ',0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(nx, ny, radius, 0, Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  /* ================= 部署ノード（軌道・2〜3段リングでラベル衝突を回避） ================= */
   var nodes = [];
   function layoutNodes(){
     var minSide = Math.min(W, H);
     var orbitR = minSide * 0.34;
     var n = DEPTS.length - 1; // ハブ以外
+    var isMobileLayout = minSide < 500 || W < 600;
+    var ringR = isMobileLayout ? [0.48, 0.72, 0.98] : [0.56, 0.74, 0.92]; // 3段リング
     nodes = DEPTS.map(function(d, i){
       var prev = nodes[i];
       if(i === HUB_INDEX){
         return {
           def:d, isHub:true, x:CX, y:CY, angle:0, radius:0,
-          state:'idle', pulse:0, burst:[], since:0, current:''
+          state:'idle', pulse:0, burst:[], since:0, current:'', shuttleSeed: Math.random()*10
         };
       }
-      var idx = i; // ハブを除いた角度配分はそのままindexベースでOK(見た目に大差なし)
-      var angle = prev ? prev.angle : (idx / n) * Math.PI * 2;
-      var r = orbitR * (0.72 + 0.28 * ((idx % 3) / 2));
+      var idx = i;
+      var ring = idx % 3;
+      var angle = prev ? prev.angle : (idx / n) * Math.PI * 2 + ring * 0.35;
+      var r = orbitR * ringR[ring];
       return {
         def:d, isHub:false,
         angle: angle,
         radius: r,
-        speed: (0.00012 + (idx % 5) * 0.00003) * (idx % 2 === 0 ? 1 : -1),
+        speed: (0.00010 + (idx % 5) * 0.00003) * (idx % 2 === 0 ? 1 : -1),
         x:0, y:0,
         state: prev ? prev.state : 'idle',
         current: prev ? prev.current : '',
         since: prev ? prev.since : 0,
         pulse: prev ? prev.pulse : Math.random()*Math.PI*2,
-        burst: prev ? prev.burst : []
+        burst: prev ? prev.burst : [],
+        shuttleSeed: prev ? prev.shuttleSeed : Math.random()*10
       };
     });
   }
@@ -598,6 +629,18 @@
   function spawnRing(idx){
     var target = nodes[idx];
     rings.push({x:target.x, y:target.y, t:0, dur:1600});
+  }
+
+  var lastAmbient = 0;
+  function ambientTick(now){
+    if(reduceMotion) return;
+    if(!lastAmbient) lastAmbient = now;
+    if(now - lastAmbient < (2200 + Math.random()*2600)) return;
+    lastAmbient = now;
+    var idx = Math.floor(Math.random() * (nodes.length - 1)); // ハブを除く
+    var hub = nodes[HUB_INDEX];
+    var target = nodes[idx];
+    beams.push({fx:hub.x, fy:hub.y, tx:target.x, ty:target.y, t:0, dur:1100, color:'rgba(240,192,96,0.55)', kind:'ambient'});
   }
 
   function applyEvent(ev){
@@ -696,6 +739,35 @@
     });
   }
 
+  /* ================= ラベル衝突回避 ================= */
+  var placedLabelsRef = []; // draw()内で毎フレーム差し替えられる参照
+  function placeLabel(x, textWidth, baseY, height){
+    var y = baseY;
+    var tries = 0;
+    var pad = 10;
+    while(tries < 12){
+      var overlap = placedLabelsRef.some(function(rect){
+        var overlapX = !(x + textWidth/2 + pad < rect.x - rect.w/2 || x - textWidth/2 - pad > rect.x + rect.w/2);
+        var overlapY = Math.abs(y - rect.y) < height;
+        return overlapX && overlapY;
+      });
+      if(!overlap) break;
+      y += height;
+      tries++;
+    }
+    placedLabelsRef.push({x:x, y:y, w:textWidth});
+    return y;
+  }
+
+  function truncateToWidth(ctx2, text, maxWidth){
+    if(ctx2.measureText(text).width <= maxWidth) return text;
+    var t = text;
+    while(t.length > 1 && ctx2.measureText(t + '…').width > maxWidth){
+      t = t.slice(0, -1);
+    }
+    return t + '…';
+  }
+
   /* ================= 描画ループ ================= */
   var lastFrame = 0;
   function draw(now){
@@ -704,6 +776,9 @@
     lastFrame = now;
 
     ctx.clearRect(0, 0, W, H);
+
+    // 星雲（背景の帯・ゆっくり回転・呼吸）
+    drawNebulae(now);
 
     // 背景粒子
     for(var i=0;i<bgParticles.length;i++){
@@ -731,15 +806,19 @@
     }
 
     // 軌道線
-    ctx.strokeStyle = 'rgba(240,192,96,0.06)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.1;
     var minSide = Math.min(W, H);
     var orbitR = minSide * 0.34;
+    var ringR = (minSide < 500 || W < 600) ? [0.48, 0.72, 0.98] : [0.56, 0.74, 0.92];
     for(var oi=0; oi<3; oi++){
+      ctx.strokeStyle = 'rgba(240,192,96,0.16)';
       ctx.beginPath();
-      ctx.arc(CX, CY, orbitR * (0.72 + 0.28*(oi/2)), 0, Math.PI*2);
+      ctx.arc(CX, CY, orbitR * ringR[oi], 0, Math.PI*2);
       ctx.stroke();
     }
+
+    // 常時の微弱パルス（イベントが無い間もハブ→ランダムなノードへ）
+    ambientTick(now);
 
     // ノード位置更新
     for(i=0;i<nodes.length;i++){
@@ -750,18 +829,33 @@
       n.y = CY + Math.sin(n.angle) * n.radius;
     }
 
-    // 接続線（ハブ⇄各ノード、常時薄く）
-    ctx.lineWidth = 1;
+    // 接続線（ハブ⇄各ノード、常時見える濃さで明滅）
+    ctx.lineWidth = 1.2;
     for(i=0;i<nodes.length;i++){
       var nn = nodes[i];
       if(nn.isHub) continue;
       var hub = nodes[HUB_INDEX];
-      var flick = 0.05 + 0.03*Math.sin(now*0.001 + i);
-      ctx.strokeStyle = 'rgba(255,255,255,' + flick + ')';
+      var isWorking = nn.state === 'working';
+      var flick = (isWorking ? 0.22 : 0.12) + 0.08*Math.sin(now*0.0012 + i);
+      ctx.strokeStyle = isWorking ? ('rgba(240,192,96,' + flick + ')') : ('rgba(255,255,255,' + flick + ')');
       ctx.beginPath();
       ctx.moveTo(hub.x, hub.y);
       ctx.lineTo(nn.x, nn.y);
       ctx.stroke();
+
+      // 稼働中ノード: ハブ⇄ノードを常時往復する光の粒
+      if(isWorking){
+        var shuttleT = (Math.sin(now*0.0009 + nn.shuttleSeed) + 1) / 2;
+        var sx = hub.x + (nn.x - hub.x) * shuttleT;
+        var sy = hub.y + (nn.y - hub.y) * shuttleT;
+        ctx.beginPath();
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(240,192,96,0.9)';
+        ctx.shadowBlur = 10;
+        ctx.arc(sx, sy, 2.4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
     }
 
     // ビーム
@@ -817,6 +911,10 @@
     });
 
     // ノード描画
+    placedLabelsRef = []; // ラベル衝突回避用（このフレームでの配置済み矩形）
+    var hubNode = nodes[HUB_INDEX];
+    ctx.font = 'bold 17px "Zen Old Mincho", serif';
+    placedLabelsRef.push({x:hubNode.x, y:hubNode.y + 46, w: ctx.measureText('依頼台帳').width});
     for(i=0;i<nodes.length;i++){
       var node = nodes[i];
       node.pulse += (node.state === 'working' ? 0.05 : 0.018) * (dt/16.7);
@@ -830,52 +928,97 @@
       }
 
       var color = node.isHub ? '240,192,96' : (node.state === 'working' ? '255,255,255' : '240,192,96');
-      var glow = node.isHub ? 26 : (node.state === 'working' ? 18 : 9);
+      var glow = node.isHub ? 34 : (node.state === 'working' ? 26 : 14);
+
+      // 多段グロー（外側の淡いハローと内側の濃いハロー）
+      var gOuter = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glow*1.6);
+      gOuter.addColorStop(0, 'rgba(' + color + ',0.28)');
+      gOuter.addColorStop(1, 'rgba(' + color + ',0)');
+      ctx.fillStyle = gOuter;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, glow*1.6, 0, Math.PI*2);
+      ctx.fill();
 
       var g = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glow);
-      g.addColorStop(0, 'rgba(' + color + ',0.9)');
+      g.addColorStop(0, 'rgba(' + color + ',0.95)');
       g.addColorStop(1, 'rgba(' + color + ',0)');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(node.x, node.y, glow, 0, Math.PI*2);
       ctx.fill();
 
+      ctx.save();
+      ctx.shadowColor = 'rgba(' + color + ',0.95)';
+      ctx.shadowBlur = node.state === 'working' ? 22 : 12;
       ctx.beginPath();
       ctx.fillStyle = 'rgba(' + color + ',1)';
       ctx.arc(node.x, node.y, Math.max(r, 3), 0, Math.PI*2);
       ctx.fill();
+      ctx.restore();
+
+      // 稼働中ノード: 周囲を渦巻く小粒子
+      if(node.state === 'working' && !node.isHub){
+        var swirlCount = 5;
+        for(var si=0; si<swirlCount; si++){
+          var sAng = now*0.0016 + (si/swirlCount)*Math.PI*2;
+          var sRad = 15 + 3*Math.sin(now*0.002 + si);
+          var swx = node.x + Math.cos(sAng)*sRad;
+          var swy = node.y + Math.sin(sAng)*sRad*0.7;
+          ctx.beginPath();
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          ctx.arc(swx, swy, 1.4, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
 
       // バースト（完了時の粒子）
       node.burst = node.burst.filter(function(b){
         b.t += dt;
         var progress = b.t / b.dur;
         if(progress >= 1) return false;
-        var count = 8;
+        var count = 10;
         for(var bi=0; bi<count; bi++){
           var ang = (bi/count) * Math.PI*2;
-          var dist = progress * 28;
+          var dist = progress * 32;
           var bx = node.x + Math.cos(ang)*dist;
           var by = node.y + Math.sin(ang)*dist;
           ctx.beginPath();
           ctx.fillStyle = 'rgba(240,192,96,' + (1-progress) + ')';
-          ctx.arc(bx, by, 2, 0, Math.PI*2);
+          ctx.arc(bx, by, 2.2, 0, Math.PI*2);
           ctx.fill();
         }
         return true;
       });
 
-      // ラベル
+      // ラベル（部署名16px白＋状態行14px、重なる場合は下にずらす）
       if(!node.isHub){
-        ctx.font = '11px "Noto Sans JP", sans-serif';
-        ctx.fillStyle = 'rgba(244,244,242,0.75)';
+        var nameSize = 16;
+        var subSize = 14;
+        var maxLabelWidth = W < 600 ? Math.min(W * 0.34, 150) : Math.min(W * 0.42, 230);
+        ctx.font = 'bold ' + nameSize + 'px "Noto Sans JP", sans-serif';
+        var nameText = truncateToWidth(ctx, node.def.name, maxLabelWidth);
+        var nameWidth = ctx.measureText(nameText).width;
+        var stateLabel = node.state === 'working' ? '稼働中' : (node.state === 'done' ? '完了直後' : '待機中');
+        ctx.font = subSize + 'px "Noto Sans JP", sans-serif';
+        var subText = truncateToWidth(ctx, (node.current ? node.current : stateLabel), maxLabelWidth);
+        var subWidth = ctx.measureText(subText).width;
+        var textWidth = Math.max(nameWidth, subWidth);
+        var lineH = nameSize + subSize + 8;
+        var baseY = node.y + r + 20;
+        var placedY = placeLabel(node.x, textWidth, baseY, lineH + 6);
+
         ctx.textAlign = 'center';
-        var labelY = node.y + r + 15;
-        ctx.fillText(node.def.name, node.x, labelY);
+        ctx.font = 'bold ' + nameSize + 'px "Noto Sans JP", sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.fillText(nameText, node.x, placedY);
+        ctx.font = subSize + 'px "Noto Sans JP", sans-serif';
+        ctx.fillStyle = node.state === 'working' ? 'rgba(240,192,96,0.95)' : 'rgba(240,192,96,0.7)';
+        ctx.fillText(subText, node.x, placedY + subSize + 6);
       } else {
-        ctx.font = 'bold 13px "Zen Old Mincho", serif';
+        ctx.font = 'bold 17px "Zen Old Mincho", serif';
         ctx.fillStyle = 'rgba(240,192,96,0.95)';
         ctx.textAlign = 'center';
-        ctx.fillText('依頼台帳', node.x, node.y + 40);
+        ctx.fillText('依頼台帳', node.x, node.y + 46);
       }
     }
 
@@ -979,6 +1122,7 @@
       if(!n) return;
       if(a.state === 'working') n.state = 'working';
       else if(a.state === 'done') n.state = 'done';
+      else if(a.state === 'idle' && n.state !== 'working') n.state = 'idle';
       if(a.current) n.current = a.current;
     });
   }
