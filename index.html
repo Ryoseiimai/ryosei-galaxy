@@ -587,19 +587,23 @@
   var LABEL_NAME_SIZE = 16, LABEL_SUB_SIZE = 14;
   var LABEL_ANCHOR_GAP = 10;
   var HUB_FONT_SIZE = 15, HUB_ANCHOR_GAP = 10;
-  var ANGLE_NUDGE_MAX = 8 * Math.PI / 180; // ±8度
+  var ANGLE_NUDGE_MAX_DESKTOP = 8 * Math.PI / 180;  // ±8度
+  var ANGLE_NUDGE_MAX_MOBILE = 15 * Math.PI / 180;  // ±15度（モバイルはより詰まりやすいため広め）
   var ANGLE_NUDGE_STEP = 0.012;
   var ANGLE_NUDGE_EASE = 0.90;
 
+  // 位相は0°/45°/90°、角速度比は外:中:内 = 1:1.35:1.8（外が遅く内が速い）
+  var SPEED_BASE = 0.00004;
+  var PHASE_OUTER = 0, PHASE_MID = Math.PI/4, PHASE_INNER = Math.PI/2;
   var ELLIPSE_DEFS_DESKTOP = [
-    { key:'outer', count:4, rxF:0.44, ryF:0.52, speed:-0.00004, phase:0.15 },
-    { key:'mid',   count:4, rxF:0.30, ryF:0.52, speed: 0.00007, phase:0.95 },
-    { key:'inner', count:3, rxF:0.16, ryF:0.52, speed:-0.00012, phase:0.55 }
+    { key:'outer', count:4, rxF:0.44, ryF:0.52, speed:-SPEED_BASE*1.0,  phase:PHASE_OUTER },
+    { key:'mid',   count:4, rxF:0.30, ryF:0.52, speed: SPEED_BASE*1.35, phase:PHASE_MID },
+    { key:'inner', count:3, rxF:0.16, ryF:0.52, speed:-SPEED_BASE*1.8,  phase:PHASE_INNER }
   ];
   var ELLIPSE_DEFS_MOBILE = [
-    { key:'outer', count:4, rxF:0.42, ryF:1.6, speed:-0.00004, phase:0.15 },
-    { key:'mid',   count:4, rxF:0.30, ryF:1.6, speed: 0.00007, phase:0.95 },
-    { key:'inner', count:3, rxF:0.16, ryF:1.6, speed:-0.00012, phase:0.55 }
+    { key:'outer', count:4, rxF:0.42, ryF:1.6, speed:-SPEED_BASE*1.0,  phase:PHASE_OUTER },
+    { key:'mid',   count:4, rxF:0.30, ryF:1.6, speed: SPEED_BASE*1.35, phase:PHASE_MID },
+    { key:'inner', count:3, rxF:0.16, ryF:1.6, speed:-SPEED_BASE*1.8,  phase:PHASE_INNER }
   ];
 
   // 楕円は真円ではないため「等角度」で並べると、rx≫ry側の扁平な楕円では
@@ -713,6 +717,29 @@
     return Math.min(Math.max(x, half), W - half);
   }
 
+  // モバイル: ノードの位置（中心からの角度）に応じてラベルを4方向（右/下/左/上）に置く。
+  // 縦長楕円では右端付近で3リングが接近するため、下に固定せず横方向にも逃がす。
+  // draw()の実描画とestimateLabelRectの両方から同じ結果を使うことで検証と表示のズレを防ぐ。
+  function mobileLabelPlacement(node, w, fontSize){
+    var ang = (node.baseAngle || 0) + (node.offset || 0);
+    ang = ((ang % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+    var gap = 8, r = 9;
+    var sector;
+    if(ang <= Math.PI*0.25 || ang > Math.PI*1.75) sector = 'right';
+    else if(ang <= Math.PI*0.75) sector = 'bottom';
+    else if(ang <= Math.PI*1.25) sector = 'left';
+    else sector = 'top';
+
+    var x, y, align;
+    if(sector === 'right'){ x = node.x + r + gap; y = node.y + fontSize/3; align = 'left'; }
+    else if(sector === 'left'){ x = node.x - r - gap; y = node.y + fontSize/3; align = 'right'; }
+    else if(sector === 'bottom'){ x = node.x; y = node.y + r + gap + fontSize; align = 'center'; }
+    else { x = node.x; y = node.y - r - gap; align = 'center'; }
+
+    var rectX = align === 'left' ? x : (align === 'right' ? x - w : x - w/2);
+    return { x:x, y:y, align:align, rect:{ x:rectX, y:y - fontSize, w:w, h:fontSize } };
+  }
+
   // このフレームで各ノードのラベルが占める矩形を、実際の描画前に見積もる（省略なし＝フルネーム基準）
   function estimateLabelRect(node){
     if(node.isHub){
@@ -725,6 +752,11 @@
     var f = labelFontsFor(node);
     ctx.font = 'bold ' + f.nameSize + 'px "Noto Sans JP", sans-serif';
     var nameW = ctx.measureText(node.def.name).width;
+
+    if(IS_MOBILE_LAYOUT){
+      return mobileLabelPlacement(node, nameW, f.nameSize).rect;
+    }
+
     var anchorY = node.y + 9 + LABEL_ANCHOR_GAP;
     var h = f.nameSize;
     var w = nameW;
@@ -774,7 +806,8 @@
       if(!overlapping[n.def.key]){
         n.offset *= ANGLE_NUDGE_EASE; // 衝突していないノードは徐々に定位置へ戻す
       }
-      n.offset = Math.max(-ANGLE_NUDGE_MAX, Math.min(ANGLE_NUDGE_MAX, n.offset));
+      var nudgeMax = IS_MOBILE_LAYOUT ? ANGLE_NUDGE_MAX_MOBILE : ANGLE_NUDGE_MAX_DESKTOP;
+      n.offset = Math.max(-nudgeMax, Math.min(nudgeMax, n.offset));
     });
   }
 
@@ -1151,43 +1184,52 @@
         return true;
       });
 
-      // ラベル: 常にノード直下・省略なしのフルネーム。画面端では中心アンカーだけ内側へ寄せる（文字は切らない）。
+      // ラベル: 省略なしのフルネーム。デスクトップは常にノード直下、
+      // モバイルは中心からの角度に応じて右/下/左/上の4方向へ配置する。
       // 重なる瞬間は角度側で回避済み（resolveLabelOverlaps）
       if(!node.isHub){
         var f = labelFontsFor(node);
-        var anchorY = node.y + r + LABEL_ANCHOR_GAP;
-
         ctx.font = 'bold ' + f.nameSize + 'px "Noto Sans JP", sans-serif';
         var nameText = node.def.name; // 省略禁止：フルネームをそのまま描画
         var nameWidth = ctx.measureText(nameText).width;
-        var stateLabel = node.state === 'working' ? '稼働中' : (node.state === 'done' ? '完了直後' : '待機中');
-        var subText = node.current || stateLabel; // 省略禁止
-        var subWidth = 0;
-        if(f.showSub){
-          ctx.font = f.subSize + 'px "Noto Sans JP", sans-serif';
-          subWidth = ctx.measureText(subText).width;
-        }
-        var labelAnchorX = clampLabelX(node.x, Math.max(nameWidth, subWidth));
 
-        ctx.textAlign = 'center';
-        ctx.font = 'bold ' + f.nameSize + 'px "Noto Sans JP", sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.fillText(nameText, labelAnchorX, anchorY);
-        window.__RG_DEBUG.labelRects.push({
-          dept: node.def.name,
-          x: labelAnchorX - nameWidth/2, y: anchorY - f.nameSize, w: nameWidth, h: f.nameSize
-        });
+        if(IS_MOBILE_LAYOUT){
+          var placement = mobileLabelPlacement(node, nameWidth, f.nameSize);
+          ctx.textAlign = placement.align;
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.fillText(nameText, placement.x, placement.y);
+          window.__RG_DEBUG.labelRects.push({ dept: node.def.name, x: placement.rect.x, y: placement.rect.y, w: placement.rect.w, h: placement.rect.h });
+        } else {
+          var anchorY = node.y + r + LABEL_ANCHOR_GAP;
+          var stateLabel = node.state === 'working' ? '稼働中' : (node.state === 'done' ? '完了直後' : '待機中');
+          var subText = node.current || stateLabel; // 省略禁止
+          var subWidth = 0;
+          if(f.showSub){
+            ctx.font = f.subSize + 'px "Noto Sans JP", sans-serif';
+            subWidth = ctx.measureText(subText).width;
+          }
+          var labelAnchorX = clampLabelX(node.x, Math.max(nameWidth, subWidth));
 
-        if(f.showSub){
-          // 外・中リングのみ状態行（部署名の1行下）を表示。内リングは部署名のみ。
-          ctx.font = f.subSize + 'px "Noto Sans JP", sans-serif';
-          var subY = anchorY + f.subSize + 6;
-          ctx.fillStyle = node.state === 'working' ? 'rgba(240,192,96,0.95)' : 'rgba(240,192,96,0.7)';
-          ctx.fillText(subText, labelAnchorX, subY);
+          ctx.textAlign = 'center';
+          ctx.font = 'bold ' + f.nameSize + 'px "Noto Sans JP", sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.fillText(nameText, labelAnchorX, anchorY);
           window.__RG_DEBUG.labelRects.push({
-            dept: node.def.name + ':sub',
-            x: labelAnchorX - subWidth/2, y: subY - f.subSize, w: subWidth, h: f.subSize
+            dept: node.def.name,
+            x: labelAnchorX - nameWidth/2, y: anchorY - f.nameSize, w: nameWidth, h: f.nameSize
           });
+
+          if(f.showSub){
+            // 外・中リングのみ状態行（部署名の1行下）を表示。内リングは部署名のみ。
+            ctx.font = f.subSize + 'px "Noto Sans JP", sans-serif';
+            var subY = anchorY + f.subSize + 6;
+            ctx.fillStyle = node.state === 'working' ? 'rgba(240,192,96,0.95)' : 'rgba(240,192,96,0.7)';
+            ctx.fillText(subText, labelAnchorX, subY);
+            window.__RG_DEBUG.labelRects.push({
+              dept: node.def.name + ':sub',
+              x: labelAnchorX - subWidth/2, y: subY - f.subSize, w: subWidth, h: f.subSize
+            });
+          }
         }
       } else {
         var hubAnchorY = node.y + baseR + HUB_ANCHOR_GAP + HUB_FONT_SIZE;
