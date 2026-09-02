@@ -2,346 +2,317 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RYOSEI GALAXY — 部署を、ぜんぶAIにした会社</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>🌌</text></svg>">
-<meta name="description" content="RYOSEIWORLD合同会社のAI組織『RYOSEI GALAXY』。人間は代表1人、部署はぜんぶAIエージェント。やりたくないことを、世界から無くす。">
+<meta name="description" content="RYOSEIWORLD合同会社のAI組織『RYOSEI GALAXY』。人間は代表1人、部署はぜんぶAIエージェント。各AIが今なにをしているかがリアルタイムで見える銀河です。">
 <meta property="og:title" content="RYOSEI GALAXY">
-<meta property="og:description" content="会社の部署を、ぜんぶAIにした。人間は代表1人。">
+<meta property="og:description" content="会社の部署を、ぜんぶAIにした。人間は代表1人。今この瞬間、各AIが働いている様子がここで見えます。">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0a0f;
-    --bg2:#0e0e16;
+    --bg:#000;
     --fg:#f4f4f2;
     --sub:#a8a8b2;
     --line:#26262f;
     --gold:#f0c060;
+    --amber:#e08a3c;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
+  html,body{
     background:var(--bg);
     color:var(--fg);
     font-family:"Noto Sans JP",-apple-system,BlinkMacSystemFont,sans-serif;
     font-size:16px;
-    line-height:1.8;
+    line-height:1.7;
     overflow-x:hidden;
+    height:100%;
+    -webkit-tap-highlight-color:transparent;
   }
   h1,h2,h3{font-family:"Zen Old Mincho",serif;font-weight:700;letter-spacing:.02em;}
   a{color:var(--gold);}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+  button{font-family:inherit;}
 
-  /* ---------- Hero ---------- */
-  .hero{
+  /* ---------- 全画面銀河ステージ ---------- */
+  #stage{
     position:relative;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    padding:80px 24px;
-    background:var(--bg);
+    width:100%;
+    height:100svh;
+    height:100vh;
     overflow:hidden;
+    background:radial-gradient(ellipse at 50% 40%, #0b0b14 0%, #000 70%);
   }
-  .stars, .stars2, .stars3{
+  #galaxy{
     position:absolute;
     inset:0;
-    background-repeat:repeat;
-    z-index:0;
-  }
-  .stars{
-    background-image:radial-gradient(1px 1px at 20px 30px, #fff, transparent),
-      radial-gradient(1px 1px at 140px 90px, #fff, transparent),
-      radial-gradient(1px 1px at 260px 40px, #fff, transparent),
-      radial-gradient(1px 1px at 340px 160px, #fff, transparent),
-      radial-gradient(2px 2px at 400px 220px, #fff, transparent),
-      radial-gradient(1px 1px at 60px 200px, #fff, transparent);
-    background-size:420px 260px;
-    opacity:.5;
-    animation:drift 90s linear infinite;
-  }
-  .stars2{
-    background-image:radial-gradient(1px 1px at 80px 60px, var(--gold), transparent),
-      radial-gradient(1px 1px at 220px 180px, #fff, transparent),
-      radial-gradient(1px 1px at 360px 60px, #fff, transparent);
-    background-size:500px 320px;
-    opacity:.35;
-    animation:drift 140s linear infinite reverse;
-  }
-  @keyframes drift{
-    from{transform:translateY(0);}
-    to{transform:translateY(-600px);}
-  }
-  @media (prefers-reduced-motion: reduce){
-    .stars, .stars2{animation:none;}
-    html{scroll-behavior:auto;}
-  }
-  .hero-inner{position:relative;z-index:1;}
-  .eyebrow{
-    font-size:.9rem;
-    color:var(--sub);
-    letter-spacing:.25em;
-    margin-bottom:18px;
-  }
-  .eyebrow b{color:var(--fg);font-weight:500;}
-  .hero h1{
-    font-size:clamp(2.6rem, 9vw, 5.2rem);
-    line-height:1.15;
-    background:linear-gradient(180deg, #fff 0%, var(--gold) 100%);
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
-  }
-  .hero-sub{
-    margin-top:22px;
-    font-size:1.15rem;
-    color:var(--sub);
-  }
-  .hero-line{
-    margin-top:32px;
-    font-size:1.05rem;
-    color:var(--fg);
-    border-top:1px solid var(--line);
-    border-bottom:1px solid var(--line);
-    padding:16px 0;
-    display:inline-block;
+    width:100%;
+    height:100%;
+    display:block;
+    touch-action:none;
   }
 
-  section{padding:96px 0;border-top:1px solid var(--line);}
-  .section-head{text-align:center;margin-bottom:56px;}
-  .section-head h2{font-size:clamp(1.6rem,4vw,2.3rem);}
-  .section-head p{color:var(--sub);margin-top:10px;}
-
-  /* ---------- Org cards ---------- */
-  .org-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
-    gap:20px;
+  /* ---------- HUD ---------- */
+  .hud{
+    position:absolute;
+    left:0;right:0;
+    z-index:5;
+    pointer-events:none;
+    padding:0 18px;
   }
-  .card{
-    background:var(--bg2);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:26px 24px;
-    transition:border-color .2s ease, transform .2s ease;
-  }
-  .card:hover{border-color:var(--gold);transform:translateY(-2px);}
-  .card-top{
+  .hud-top{
+    top:0;
+    padding-top:max(14px, env(safe-area-inset-top));
     display:flex;
     justify-content:space-between;
     align-items:flex-start;
     gap:12px;
-    margin-bottom:10px;
   }
-  .card h3{font-size:1.15rem;}
-  .agent-name{
-    font-size:.85rem;
+  .hud-title{
+    font-family:"Zen Old Mincho",serif;
+    font-size:clamp(1.3rem, 4.4vw, 1.9rem);
     color:var(--gold);
-    margin-bottom:12px;
-    font-family:"Noto Sans JP",sans-serif;
-    letter-spacing:.02em;
+    letter-spacing:.08em;
+    text-shadow:0 0 18px rgba(240,192,96,.35);
   }
-  .card p.desc{color:var(--sub);font-size:.95rem;line-height:1.75;}
-  .badge{
-    flex-shrink:0;
-    font-size:.72rem;
-    letter-spacing:.05em;
-    padding:4px 10px;
-    border-radius:999px;
-    border:1px solid var(--line);
+  .hud-title small{
+    display:block;
+    font-family:"Noto Sans JP",sans-serif;
+    font-size:.62rem;
+    color:var(--sub);
+    letter-spacing:.24em;
+    margin-bottom:4px;
+  }
+  .hud-stats{
+    text-align:right;
+    font-size:.78rem;
+    color:var(--sub);
+    line-height:1.9;
     white-space:nowrap;
   }
+  .hud-stats b{color:var(--fg);font-weight:700;font-variant-numeric:tabular-nums;}
+  .hud-stats .gold{color:var(--gold);}
+  .live-dot{
+    display:inline-block;
+    width:7px;height:7px;border-radius:50%;
+    background:var(--gold);
+    margin-right:6px;
+    animation:live-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes live-pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+  .hud-bottom{
+    bottom:0;
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .ticker-wrap{
+    pointer-events:none;
+    overflow:hidden;
+    border-top:1px solid rgba(240,192,96,.18);
+    background:linear-gradient(0deg, rgba(0,0,0,.75), transparent);
+    padding:9px 0 4px;
+    white-space:nowrap;
+  }
+  .ticker{
+    display:inline-block;
+    white-space:nowrap;
+    font-size:.82rem;
+    color:var(--sub);
+    padding-left:100%;
+    animation:ticker-scroll 42s linear infinite;
+  }
+  .ticker .item{margin-right:56px;}
+  .ticker .item time{color:var(--gold);margin-right:8px;font-variant-numeric:tabular-nums;}
+  @keyframes ticker-scroll{
+    from{transform:translateX(0);}
+    to{transform:translateX(-100%);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ticker{animation:none;padding-left:16px;}
+    .live-dot{animation:none;}
+  }
+
+  .hud-actions{
+    pointer-events:auto;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    padding:0 0 4px;
+  }
+  .pill-btn{
+    background:rgba(10,10,16,.6);
+    border:1px solid var(--line);
+    color:var(--fg);
+    font-size:.78rem;
+    padding:9px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    backdrop-filter:blur(6px);
+    transition:border-color .2s ease, color .2s ease;
+    letter-spacing:.02em;
+  }
+  .pill-btn:hover, .pill-btn:focus-visible{border-color:var(--gold);color:var(--gold);}
+
+  .scroll-hint{
+    position:absolute;
+    left:50%;
+    bottom:max(78px, calc(env(safe-area-inset-bottom) + 66px));
+    transform:translateX(-50%);
+    z-index:5;
+    color:var(--sub);
+    font-size:.72rem;
+    letter-spacing:.2em;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    pointer-events:none;
+    animation:hint-bob 2.4s ease-in-out infinite;
+  }
+  @keyframes hint-bob{0%,100%{transform:translate(-50%,0);opacity:.7;}50%{transform:translate(-50%,6px);opacity:1;}}
+  .scroll-hint .arrow{font-size:1rem;color:var(--gold);}
+
+  /* ---------- 部署カード（hover/tap） ---------- */
+  .node-card{
+    position:absolute;
+    z-index:6;
+    max-width:260px;
+    background:rgba(10,10,16,.92);
+    border:1px solid var(--gold);
+    border-radius:6px;
+    padding:14px 16px;
+    font-size:.85rem;
+    color:var(--fg);
+    pointer-events:none;
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .16s ease, transform .16s ease;
+    box-shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+  .node-card.is-visible{opacity:1;transform:translateY(0);}
+  .node-card h4{font-family:"Zen Old Mincho",serif;font-size:1rem;color:var(--gold);margin-bottom:4px;}
+  .node-card .agent{color:var(--sub);font-size:.75rem;margin-bottom:8px;}
+  .node-card .state{
+    display:inline-block;
+    font-size:.68rem;
+    letter-spacing:.05em;
+    padding:3px 9px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    margin-bottom:8px;
+  }
+  .node-card .state.working{color:var(--gold);border-color:var(--gold);}
+  .node-card .state.wait{color:var(--amber);border-color:var(--amber);}
+  .node-card p.desc{color:var(--sub);font-size:.78rem;line-height:1.6;}
+
+  /* ---------- 下スクロール本文 ---------- */
+  main{position:relative;background:var(--bg);z-index:2;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+  section{padding:88px 0;border-top:1px solid var(--line);}
+  .section-head{text-align:center;margin-bottom:52px;}
+  .section-head h2{font-size:clamp(1.5rem,4vw,2.2rem);}
+  .section-head p{color:var(--sub);margin-top:10px;font-size:.95rem;}
+
+  .org-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(270px, 1fr));gap:18px;}
+  .card{
+    background:#0e0e16;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px 22px;
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .card:hover{border-color:var(--gold);transform:translateY(-2px);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;}
+  .card h3{font-size:1.08rem;}
+  .agent-name{font-size:.82rem;color:var(--gold);margin-bottom:10px;letter-spacing:.02em;}
+  .card p.desc{color:var(--sub);font-size:.9rem;line-height:1.75;}
+  .badge{flex-shrink:0;font-size:.7rem;letter-spacing:.05em;padding:4px 10px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;}
   .badge-live{color:var(--gold);border-color:var(--gold);}
   .badge-proto{color:var(--fg);border-color:var(--sub);}
   .badge-concept{color:var(--sub);}
-  .cn-line{
-    margin-top:10px;
-    font-size:.85rem;
-    color:var(--sub);
-    font-style:normal;
-  }
+  .cn-line{margin-top:10px;font-size:.82rem;color:var(--sub);}
 
-  /* ---------- How it works ---------- */
-  .steps{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
-    gap:24px;
-  }
-  .step{
-    border:1px solid var(--line);
-    padding:28px 24px;
-    position:relative;
-  }
-  .step .num{
-    font-family:"Zen Old Mincho",serif;
-    font-size:2.4rem;
-    color:var(--gold);
-    line-height:1;
-    margin-bottom:14px;
-  }
-  .step h3{font-size:1.05rem;margin-bottom:10px;}
-  .step p{color:var(--sub);font-size:.95rem;}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:22px;}
+  .step{border:1px solid var(--line);padding:26px 22px;}
+  .step .num{font-family:"Zen Old Mincho",serif;font-size:2.2rem;color:var(--gold);line-height:1;margin-bottom:12px;}
+  .step h3{font-size:1rem;margin-bottom:8px;}
+  .step p{color:var(--sub);font-size:.9rem;}
 
-  /* ---------- Promo ---------- */
-  #promo .video-frame{
-    border:1px solid var(--line);
-    background:var(--bg2);
-    aspect-ratio:16/9;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-  }
-  #promo video{width:100%;height:100%;object-fit:cover;display:block;}
-  .video-placeholder{
-    color:var(--sub);
-    font-size:.95rem;
-    letter-spacing:.1em;
-  }
-
-  /* ---------- Footer ---------- */
-  footer{
-    padding:56px 0;
-    border-top:1px solid var(--line);
-    text-align:center;
-    color:var(--sub);
-    font-size:.9rem;
-  }
-  footer .brand{
-    font-family:"Zen Old Mincho",serif;
-    color:var(--fg);
-    font-size:1.1rem;
-    margin-bottom:14px;
-  }
+  footer{padding:52px 0;border-top:1px solid var(--line);text-align:center;color:var(--sub);font-size:.88rem;}
+  footer .brand{font-family:"Zen Old Mincho",serif;color:var(--fg);font-size:1.05rem;margin-bottom:12px;}
   footer p{margin:4px 0;}
   footer a{color:var(--sub);text-decoration:underline;}
   footer a:hover{color:var(--gold);}
 
-  @media (max-width:480px){
-    section{padding:64px 0;}
-    .hero{padding:60px 20px;}
-  }
-
-  /* ---------- Live feed ---------- */
-  .live-band{
+  /* ---------- 動画モーダル ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:50;
+    background:rgba(0,0,0,.88);
     display:none;
-    border-top:1px solid var(--line);
-    border-bottom:1px solid var(--line);
-    background:var(--bg2);
-    padding:20px 0;
+    align-items:center;justify-content:center;
+    padding:24px;
   }
-  .live-band.is-visible{display:block;}
-  .live-band-inner{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:14px;
-    font-size:.92rem;
-    color:var(--sub);
-  }
-  .live-dot{
-    width:9px;
-    height:9px;
-    border-radius:50%;
-    background:var(--gold);
-    flex-shrink:0;
-    animation:live-pulse 1.6s ease-in-out infinite;
-  }
-  @keyframes live-pulse{
-    0%,100%{opacity:1;}
-    50%{opacity:.25;}
-  }
-  @media (prefers-reduced-motion: reduce){
-    .live-dot{animation:none;}
-  }
-  .live-stats b{color:var(--fg);font-weight:500;}
-  .live-updated{
-    margin-left:auto;
-    font-size:.8rem;
-    color:var(--sub);
-    opacity:.8;
-  }
-  .live-feed-wrap{display:none;}
-  .live-feed-wrap.is-visible{display:block;}
-  .live-feed{
-    max-width:1080px;
-    margin:0 auto;
-    padding:0 24px 96px;
-  }
-  .live-feed ul{
-    list-style:none;
-    border-top:1px solid var(--line);
-  }
-  .live-feed li{
-    display:flex;
-    gap:16px;
-    padding:11px 0;
-    border-bottom:1px solid var(--line);
-    font-size:.9rem;
-  }
-  .live-feed time{
-    color:var(--gold);
-    flex-shrink:0;
-    font-variant-numeric:tabular-nums;
-  }
-  .live-feed .label{color:var(--sub);}
-  .live-more{
-    margin-top:16px;
-    background:none;
+  .modal-overlay.is-open{display:flex;}
+  .modal-box{
+    width:100%;max-width:840px;
+    background:#0a0a10;
     border:1px solid var(--line);
-    color:var(--sub);
-    padding:8px 18px;
-    font-size:.85rem;
-    cursor:pointer;
-    border-radius:999px;
   }
-  .live-more:hover{border-color:var(--gold);color:var(--gold);}
-  .today-badge{
-    font-size:.72rem;
-    color:var(--gold);
-    margin-left:8px;
-    letter-spacing:.02em;
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);}
+  .modal-head h3{font-size:1rem;color:var(--gold);}
+  .modal-close{background:none;border:1px solid var(--line);color:var(--fg);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:1rem;line-height:1;}
+  .modal-close:hover{border-color:var(--gold);color:var(--gold);}
+  .modal-box video{width:100%;display:block;aspect-ratio:16/9;background:#000;}
+
+  @media (max-width:480px){
+    section{padding:60px 0;}
+    .hud-stats{font-size:.68rem;line-height:1.7;}
+    .hud-title{font-size:1.15rem;}
+    .scroll-hint{bottom:100px;}
   }
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="stars" aria-hidden="true"></div>
-  <div class="stars2" aria-hidden="true"></div>
-  <div class="hero-inner">
-    <p class="eyebrow"><b>RYOSEIWORLD</b> →</p>
-    <h1>RYOSEI GALAXY</h1>
-    <p class="hero-sub">会社の部署を、ぜんぶAIにした。人間は代表1人。</p>
-    <p class="hero-line">やりたくないことを、世界から無くす。</p>
-  </div>
-</header>
+<div id="stage">
+  <canvas id="galaxy"></canvas>
 
-<div class="live-band" id="liveBand">
-  <div class="wrap live-band-inner">
-    <span class="live-dot" aria-hidden="true"></span>
-    <span class="live-stats" id="liveStats"></span>
-    <span class="live-updated" id="liveUpdated"></span>
+  <div class="hud hud-top">
+    <div class="hud-title"><small>RYOSEIWORLD</small>RYOSEI GALAXY</div>
+    <div class="hud-stats" id="hudStats">
+      <span class="live-dot" aria-hidden="true"></span>読み込み中…
+    </div>
+  </div>
+
+  <div class="scroll-hint" id="scrollHint">
+    <span>組織図を見る</span>
+    <span class="arrow">▾</span>
+  </div>
+
+  <div class="node-card" id="nodeCard"></div>
+
+  <div class="hud hud-bottom">
+    <div class="hud-actions">
+      <button class="pill-btn" id="promoBtn" type="button">▶ Seedanceプロモを見る</button>
+    </div>
+    <div class="ticker-wrap">
+      <div class="ticker" id="ticker">読み込み中…</div>
+    </div>
   </div>
 </div>
 
-<div class="live-feed-wrap" id="liveFeedWrap">
-  <div class="live-feed">
-    <ul id="liveFeedList"></ul>
-    <button class="live-more" id="liveMoreBtn" type="button" hidden>もっと見る</button>
-  </div>
-</div>
+<main>
 
 <section id="org">
   <div class="wrap">
     <div class="section-head">
       <h2>組織図</h2>
-      <p>各部署の担当はすべてAIエージェント。稼働状況を正直に表示しています。</p>
+      <p>各部署の担当はすべてAIエージェント。稼働状況は上の銀河にリアルタイムで反映されます。</p>
     </div>
     <div class="org-grid">
 
@@ -438,7 +409,7 @@
 
       <div class="card">
         <div class="card-top">
-          <h3>依頼台帳<span class="today-badge" id="iraiTodayBadge"></span></h3>
+          <h3>依頼台帳</h3>
           <span class="badge badge-live">稼働中</span>
         </div>
         <p class="agent-name">担当AI: irai</p>
@@ -475,21 +446,6 @@
   </div>
 </section>
 
-<section id="promo">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>プロモーション動画</h2>
-      <p>RYOSEI GALAXYの紹介動画</p>
-    </div>
-    <div class="video-frame" id="videoFrame">
-      <video controls playsinline
-        onerror="document.getElementById('videoFrame').innerHTML='<p class=&quot;video-placeholder&quot;>動画準備中</p>'">
-        <source src="promo.mp4" type="video/mp4">
-      </video>
-    </div>
-  </div>
-</section>
-
 <footer>
   <div class="wrap">
     <p class="brand">RYOSEIWORLD合同会社</p>
@@ -499,108 +455,567 @@
   </div>
 </footer>
 
+</main>
+
+<div class="modal-overlay" id="promoOverlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>プロモーション動画</h3>
+      <button class="modal-close" id="promoClose" type="button" aria-label="閉じる">×</button>
+    </div>
+    <video id="promoVideo" controls playsinline>
+      <source src="promo.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
+
 <script>
 (function(){
-  var FEED_STEP = 10;
-  var lastData = null;
-  var shownCount = FEED_STEP;
+  'use strict';
 
+  /* ================= 部署ノード定義 ================= */
+  var DEPTS = [
+    {key:'apology',  name:'謝罪部（ごめん！部）', agent:'あやまり係',     desc:'苦情・ミスの一報を受け止め、即座に謝罪して振り分ける。'},
+    {key:'china',    name:'中国AI事業部',        agent:'通訳商談係',     desc:'中国語⇄日本語のやりとりをAIが担当する構想中の部署。'},
+    {key:'live',     name:'ライブコマース部',      agent:'口紅王子',       desc:'ライブ配信で商品を紹介し、質問に即答する構想中の部署。'},
+    {key:'market',   name:'GALAXYマーケット部',    agent:'店舗運営係',     desc:'AI店員が接客・在庫・注文管理をまとめて回す構想中の部署。'},
+    {key:'sales',    name:'営業部',              agent:'eigyo',         desc:'リードを診断し、1社ごとに文面を作成して下書きする。'},
+    {key:'pr',       name:'広報部',              agent:'kouhou',        desc:'X・LINE・メールの文面を下書きし、投稿は事後報告する。'},
+    {key:'finance',  name:'経理部',              agent:'zeirishi',      desc:'見積書・請求書PDF・帳簿の下ごしらえを担当する。'},
+    {key:'dev',      name:'開発部',              agent:'builder / Codex', desc:'決められた仕様どおりに実装する。'},
+    {key:'qa',       name:'検品部',              agent:'checker',       desc:'実ブラウザで「本当に動くか」だけを確かめる。'},
+    {key:'scout',    name:'調査部',              agent:'scout',         desc:'案件の棚卸しと下調べを担当する。'},
+    {key:'irai',     name:'依頼台帳',            agent:'irai',          desc:'全部署が読み書きする1本の台帳。中心のハブ。'}
+  ];
+  var HUB_INDEX = DEPTS.length - 1; // 依頼台帳=中心ハブ
+
+  /* ================= Canvas 基盤 ================= */
+  var canvas = document.getElementById('galaxy');
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W = 0, H = 0, CX = 0, CY = 0;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    var rect = document.getElementById('stage').getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    CX = W / 2; CY = H / 2;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    layoutNodes();
+  }
+
+  /* ================= 背景の微粒子 ================= */
+  var bgParticles = [];
+  function initBgParticles(){
+    var area = W * H;
+    var base = Math.round(area / 5200);
+    var count = reduceMotion ? Math.round(base * 0.35) : base;
+    count = Math.max(60, Math.min(count, 420));
+    bgParticles = [];
+    for(var i=0;i<count;i++){
+      bgParticles.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: Math.random()*1.3 + 0.3,
+        a: Math.random()*0.5 + 0.15,
+        vx: (Math.random()-0.5)*0.06,
+        vy: (Math.random()-0.5)*0.06,
+        tw: Math.random()*Math.PI*2,
+        gold: Math.random() < 0.12
+      });
+    }
+  }
+
+  /* ================= 部署ノード（軌道） ================= */
+  var nodes = [];
+  function layoutNodes(){
+    var minSide = Math.min(W, H);
+    var orbitR = minSide * 0.34;
+    var n = DEPTS.length - 1; // ハブ以外
+    nodes = DEPTS.map(function(d, i){
+      var prev = nodes[i];
+      if(i === HUB_INDEX){
+        return {
+          def:d, isHub:true, x:CX, y:CY, angle:0, radius:0,
+          state:'idle', pulse:0, burst:[], since:0, current:''
+        };
+      }
+      var idx = i; // ハブを除いた角度配分はそのままindexベースでOK(見た目に大差なし)
+      var angle = prev ? prev.angle : (idx / n) * Math.PI * 2;
+      var r = orbitR * (0.72 + 0.28 * ((idx % 3) / 2));
+      return {
+        def:d, isHub:false,
+        angle: angle,
+        radius: r,
+        speed: (0.00012 + (idx % 5) * 0.00003) * (idx % 2 === 0 ? 1 : -1),
+        x:0, y:0,
+        state: prev ? prev.state : 'idle',
+        current: prev ? prev.current : '',
+        since: prev ? prev.since : 0,
+        pulse: prev ? prev.pulse : Math.random()*Math.PI*2,
+        burst: prev ? prev.burst : []
+      };
+    });
+  }
+
+  /* ================= イベント再生（ビーム・バースト） ================= */
+  var beams = [];   // {from:{x,y}, to:{x,y}, t, dur, color, kind}
+  var rings = [];    // 本人待ち等の環 {x,y,t,dur,color}
+  var lastFeedTs = null;
+  var totalDoneCount = 0;
+
+  function nodeForId(id, listLen){
+    // 意図的簡略化: events.jsonlにdept情報が無いため、依頼ID内の数値を部署数で割った剰余で決定的に割り当てる。
+    // 本格対応の入口: events.jsonlのイベントに"dept"フィールドを持たせ、ここで直接参照する。
+    var m = /(\d+)/.exec(id || '');
+    var num = m ? parseInt(m[1], 10) : Math.floor(Math.random()*1000);
+    var deptCount = DEPTS.length - 1; // ハブを除く
+    return num % deptCount;
+  }
+
+  function spawnBeamFromOutside(toIdx){
+    var target = nodes[toIdx];
+    var angle = Math.random()*Math.PI*2;
+    var fromX = CX + Math.cos(angle) * (Math.max(W,H));
+    var fromY = CY + Math.sin(angle) * (Math.max(W,H));
+    beams.push({fx:fromX, fy:fromY, tx:nodes[HUB_INDEX].x, ty:nodes[HUB_INDEX].y, t:0, dur:900, color:'#f0c060', kind:'add'});
+  }
+  function spawnBeamHubToNode(idx){
+    var hub = nodes[HUB_INDEX];
+    var target = nodes[idx];
+    beams.push({fx:hub.x, fy:hub.y, tx:target.x, ty:target.y, t:0, dur:700, color:'#fff', kind:'claim', targetIdx:idx});
+  }
+  function spawnBurst(idx){
+    var target = nodes[idx];
+    target.burst.push({t:0, dur:900});
+    target.state = 'done';
+    target.since = performance.now();
+  }
+  function spawnRing(idx){
+    var target = nodes[idx];
+    rings.push({x:target.x, y:target.y, t:0, dur:1600});
+  }
+
+  function applyEvent(ev){
+    var idx = nodeForId(ev.id);
+    if(ev.kind === 'add'){
+      spawnBeamFromOutside(idx);
+      nodes[idx].current = ev.label;
+    } else if(ev.kind === 'claim'){
+      spawnBeamHubToNode(idx);
+      nodes[idx].state = 'working';
+      nodes[idx].current = ev.label;
+      nodes[idx].since = performance.now();
+    } else if(ev.kind === 'done'){
+      spawnBurst(idx);
+      nodes[idx].current = ev.label;
+    } else if(ev.kind === 'wait_human'){
+      spawnRing(idx);
+      nodes[idx].current = ev.label;
+    } else {
+      nodes[idx].current = ev.label;
+    }
+  }
+
+  /* ================= マウス/タッチ操作 ================= */
+  var pointer = {x:-9999, y:-9999, active:false};
+  var ripples = [];
+  function onPointerMove(x, y){ pointer.x = x; pointer.y = y; pointer.active = true; }
+  canvas.addEventListener('mousemove', function(e){
+    var rect = canvas.getBoundingClientRect();
+    onPointerMove(e.clientX - rect.left, e.clientY - rect.top);
+    hoverCheck(pointer.x, pointer.y);
+  });
+  canvas.addEventListener('mouseleave', function(){ pointer.active = false; hideCard(); });
+  canvas.addEventListener('touchmove', function(e){
+    if(!e.touches || !e.touches[0]) return;
+    var rect = canvas.getBoundingClientRect();
+    onPointerMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+  }, {passive:true});
+  canvas.addEventListener('click', function(e){
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left, y = e.clientY - rect.top;
+    ripples.push({x:x, y:y, t:0, dur:700});
+    tapCheck(x, y);
+  });
+  canvas.addEventListener('touchstart', function(e){
+    if(!e.touches || !e.touches[0]) return;
+    var rect = canvas.getBoundingClientRect();
+    var x = e.touches[0].clientX - rect.left, y = e.touches[0].clientY - rect.top;
+    ripples.push({x:x, y:y, t:0, dur:700});
+    tapCheck(x, y);
+  }, {passive:true});
+
+  var cardEl = document.getElementById('nodeCard');
+  var hoveredIdx = -1;
+  function nodeAt(x, y){
+    for(var i=0;i<nodes.length;i++){
+      var n = nodes[i];
+      var rad = n.isHub ? 30 : 16;
+      var dx = n.x - x, dy = n.y - y;
+      if(dx*dx + dy*dy <= (rad+8)*(rad+8)) return i;
+    }
+    return -1;
+  }
+  function showCard(idx, x, y){
+    var n = nodes[idx];
+    var stateLabel = n.state === 'working' ? '稼働中' : (n.state === 'done' ? '完了直後' : '待機中');
+    var stateClass = n.state === 'working' ? 'working' : (n.state === 'wait' ? 'wait' : '');
+    cardEl.innerHTML =
+      '<h4>' + esc(n.def.name) + '</h4>' +
+      '<p class="agent">担当AI: ' + esc(n.def.agent) + '</p>' +
+      '<span class="state ' + stateClass + '">' + stateLabel + '</span>' +
+      '<p class="desc">' + esc(n.current || n.def.desc) + '</p>';
+    var left = Math.min(Math.max(x + 14, 10), W - 270);
+    var top = Math.min(Math.max(y + 14, 10), H - 140);
+    cardEl.style.left = left + 'px';
+    cardEl.style.top = top + 'px';
+    cardEl.classList.add('is-visible');
+  }
+  function hideCard(){ cardEl.classList.remove('is-visible'); hoveredIdx = -1; }
+  function hoverCheck(x, y){
+    var idx = nodeAt(x, y);
+    if(idx === -1){ hideCard(); return; }
+    hoveredIdx = idx;
+    showCard(idx, x, y);
+  }
+  function tapCheck(x, y){
+    var idx = nodeAt(x, y);
+    if(idx === -1) return;
+    showCard(idx, x, y);
+    clearTimeout(tapCheck._t);
+    tapCheck._t = setTimeout(hideCard, 3400);
+  }
   function esc(s){
     return String(s).replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
   }
 
+  /* ================= 描画ループ ================= */
+  var lastFrame = 0;
+  function draw(now){
+    if(!lastFrame) lastFrame = now;
+    var dt = Math.min(now - lastFrame, 50);
+    lastFrame = now;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // 背景粒子
+    for(var i=0;i<bgParticles.length;i++){
+      var p = bgParticles[i];
+      p.x += p.vx * dt * 0.06;
+      p.y += p.vy * dt * 0.06;
+      if(pointer.active){
+        var dx = p.x - pointer.x, dy = p.y - pointer.y;
+        var dist2 = dx*dx + dy*dy;
+        if(dist2 < 14400){
+          var dist = Math.sqrt(dist2) || 1;
+          var force = (120 - dist) / 120 * 0.4;
+          p.x += (dx/dist) * force;
+          p.y += (dy/dist) * force;
+        }
+      }
+      if(p.x < -10) p.x = W+10; if(p.x > W+10) p.x = -10;
+      if(p.y < -10) p.y = H+10; if(p.y > H+10) p.y = -10;
+      p.tw += 0.02;
+      var alpha = p.a * (0.6 + 0.4*Math.sin(p.tw));
+      ctx.beginPath();
+      ctx.fillStyle = p.gold ? 'rgba(240,192,96,' + alpha + ')' : 'rgba(255,255,255,' + alpha + ')';
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // 軌道線
+    ctx.strokeStyle = 'rgba(240,192,96,0.06)';
+    ctx.lineWidth = 1;
+    var minSide = Math.min(W, H);
+    var orbitR = minSide * 0.34;
+    for(var oi=0; oi<3; oi++){
+      ctx.beginPath();
+      ctx.arc(CX, CY, orbitR * (0.72 + 0.28*(oi/2)), 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    // ノード位置更新
+    for(i=0;i<nodes.length;i++){
+      var n = nodes[i];
+      if(n.isHub){ n.x = CX; n.y = CY; continue; }
+      if(!reduceMotion) n.angle += n.speed * dt;
+      n.x = CX + Math.cos(n.angle) * n.radius;
+      n.y = CY + Math.sin(n.angle) * n.radius;
+    }
+
+    // 接続線（ハブ⇄各ノード、常時薄く）
+    ctx.lineWidth = 1;
+    for(i=0;i<nodes.length;i++){
+      var nn = nodes[i];
+      if(nn.isHub) continue;
+      var hub = nodes[HUB_INDEX];
+      var flick = 0.05 + 0.03*Math.sin(now*0.001 + i);
+      ctx.strokeStyle = 'rgba(255,255,255,' + flick + ')';
+      ctx.beginPath();
+      ctx.moveTo(hub.x, hub.y);
+      ctx.lineTo(nn.x, nn.y);
+      ctx.stroke();
+    }
+
+    // ビーム
+    beams = beams.filter(function(b){
+      b.t += dt;
+      var progress = Math.min(b.t / b.dur, 1);
+      var ex = b.fx + (b.tx - b.fx) * progress;
+      var ey = b.fy + (b.ty - b.fy) * progress;
+      var grad = ctx.createLinearGradient(b.fx, b.fy, ex, ey);
+      grad.addColorStop(0, 'rgba(255,255,255,0)');
+      grad.addColorStop(1, b.color);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(b.fx, b.fy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.fillStyle = b.color;
+      ctx.arc(ex, ey, 2.6, 0, Math.PI*2);
+      ctx.fill();
+      if(progress >= 1 && b.kind === 'claim' && typeof b.targetIdx === 'number'){
+        // 到達時に軽いパルス
+      }
+      return progress < 1;
+    });
+
+    // リング（本人待ち）
+    rings = rings.filter(function(r){
+      r.t += dt;
+      var progress = r.t / r.dur;
+      if(progress >= 1) return false;
+      var radius = 10 + progress * 34;
+      ctx.strokeStyle = 'rgba(224,138,60,' + (1-progress)*0.9 + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, radius, 0, Math.PI*2);
+      ctx.stroke();
+      return true;
+    });
+
+    // クリック波紋
+    ripples = ripples.filter(function(r){
+      r.t += dt;
+      var progress = r.t / r.dur;
+      if(progress >= 1) return false;
+      ctx.strokeStyle = 'rgba(240,192,96,' + (1-progress)*0.6 + ')';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, progress * 60, 0, Math.PI*2);
+      ctx.stroke();
+      return true;
+    });
+
+    // ノード描画
+    for(i=0;i<nodes.length;i++){
+      var node = nodes[i];
+      node.pulse += (node.state === 'working' ? 0.05 : 0.018) * (dt/16.7);
+      var baseR = node.isHub ? 20 : 9;
+      var pulseAmt = node.state === 'working' ? Math.sin(node.pulse)*2.4 : Math.sin(node.pulse)*1;
+      var r = baseR + pulseAmt;
+
+      // done直後30秒でstateをidleへ自然遷移（見た目のみ、軽いフェード）
+      if(node.state === 'done' && now - node.since > 3000){
+        node.state = 'idle';
+      }
+
+      var color = node.isHub ? '240,192,96' : (node.state === 'working' ? '255,255,255' : '240,192,96');
+      var glow = node.isHub ? 26 : (node.state === 'working' ? 18 : 9);
+
+      var g = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glow);
+      g.addColorStop(0, 'rgba(' + color + ',0.9)');
+      g.addColorStop(1, 'rgba(' + color + ',0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, glow, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(' + color + ',1)';
+      ctx.arc(node.x, node.y, Math.max(r, 3), 0, Math.PI*2);
+      ctx.fill();
+
+      // バースト（完了時の粒子）
+      node.burst = node.burst.filter(function(b){
+        b.t += dt;
+        var progress = b.t / b.dur;
+        if(progress >= 1) return false;
+        var count = 8;
+        for(var bi=0; bi<count; bi++){
+          var ang = (bi/count) * Math.PI*2;
+          var dist = progress * 28;
+          var bx = node.x + Math.cos(ang)*dist;
+          var by = node.y + Math.sin(ang)*dist;
+          ctx.beginPath();
+          ctx.fillStyle = 'rgba(240,192,96,' + (1-progress) + ')';
+          ctx.arc(bx, by, 2, 0, Math.PI*2);
+          ctx.fill();
+        }
+        return true;
+      });
+
+      // ラベル
+      if(!node.isHub){
+        ctx.font = '11px "Noto Sans JP", sans-serif';
+        ctx.fillStyle = 'rgba(244,244,242,0.75)';
+        ctx.textAlign = 'center';
+        var labelY = node.y + r + 15;
+        ctx.fillText(node.def.name, node.x, labelY);
+      } else {
+        ctx.font = 'bold 13px "Zen Old Mincho", serif';
+        ctx.fillStyle = 'rgba(240,192,96,0.95)';
+        ctx.textAlign = 'center';
+        ctx.fillText('依頼台帳', node.x, node.y + 40);
+      }
+    }
+
+    // 中心のRYOSEI GALAXYロゴグロー（薄く常時）
+    var centerGlow = ctx.createRadialGradient(CX, CY, 0, CX, CY, minSide*0.16);
+    centerGlow.addColorStop(0, 'rgba(240,192,96,0.05)');
+    centerGlow.addColorStop(1, 'rgba(240,192,96,0)');
+    ctx.fillStyle = centerGlow;
+    ctx.beginPath();
+    ctx.arc(CX, CY, minSide*0.16, 0, Math.PI*2);
+    ctx.fill();
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', function(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    resize();
+    initBgParticles();
+  });
+
+  /* ================= HUD / データ取得 ================= */
+  var hudStats = document.getElementById('hudStats');
+  var ticker = document.getElementById('ticker');
+  var lastKnownFeed = [];
+
   function fmtTime(iso){
     try{
       var d = new Date(iso);
       if(isNaN(d.getTime())) return '';
-      var mm = String(d.getMonth()+1).padStart(2,'0');
-      var dd = String(d.getDate()).padStart(2,'0');
       var hh = String(d.getHours()).padStart(2,'0');
       var mi = String(d.getMinutes()).padStart(2,'0');
-      return mm+'/'+dd+' '+hh+':'+mi;
+      return hh+':'+mi;
     }catch(e){ return ''; }
   }
 
-  function render(data){
-    if(!data || typeof data !== 'object') return;
-    lastData = data;
-
-    var band = document.getElementById('liveBand');
-    var feedWrap = document.getElementById('liveFeedWrap');
-    var statsEl = document.getElementById('liveStats');
-    var updatedEl = document.getElementById('liveUpdated');
-    var listEl = document.getElementById('liveFeedList');
-    var moreBtn = document.getElementById('liveMoreBtn');
-    var todayBadge = document.getElementById('iraiTodayBadge');
-
+  function renderHud(data){
     var today = data.today || {};
-    var received = Number(today.received) || 0;
-    var started = Number(today.started) || 0;
-    var done = Number(today.done) || 0;
-    var totalDone = Number(data.total_done) || 0;
-    var activeNow = Number(data.active_now) || 0;
+    var received = Number(today.received)||0;
+    var started = Number(today.started)||0;
+    var done = Number(today.done)||0;
+    var totalDone = Number(data.total_done)||0;
+    var updated = data.updated_at ? fmtTime(data.updated_at) : '';
+    hudStats.innerHTML =
+      '<span class="live-dot" aria-hidden="true"></span>本日 受理<b>' + received + '</b>／着手<b>' + started + '</b>／完了<b>' + done + '</b><br>' +
+      '累計完了<b class="gold">' + totalDone + '</b>　最終更新 ' + esc(updated);
+  }
 
-    statsEl.innerHTML =
-      '今日: 受理<b>' + received + '</b>件・着手<b>' + started + '</b>件・完了<b>' + done + '</b>件　／　' +
-      '累計完了<b>' + totalDone + '</b>件　／　稼働中のAIプロセス<b>' + activeNow + '</b>';
+  function renderTicker(feed){
+    if(!feed.length){ ticker.textContent = 'まだイベントがありません'; return; }
+    var html = feed.slice(0, 20).map(function(item){
+      return '<span class="item"><time>' + esc(fmtTime(item.ts)) + '</time>' + esc(item.label) + '</span>';
+    }).join('');
+    ticker.innerHTML = html + html; // ループを滑らかにするため複製
+  }
 
-    if(data.updated_at){
-      var t = fmtTime(data.updated_at);
-      updatedEl.textContent = t ? ('最終更新 ' + t) : '';
+  function playFeedDiff(feed, isInitial){
+    // feedは新しい順。古い順に並べ替えて再生する。
+    var toPlay = feed.slice().reverse();
+    if(lastFeedTs){
+      toPlay = toPlay.filter(function(item){ return item.ts > lastFeedTs; });
+    } else if(isInitial){
+      // 初回: 直近を高速で巻き戻し再生
+      toPlay = toPlay.slice(-12);
     }
-
-    if(todayBadge){
-      todayBadge.textContent = '本日 受理' + received + '/着手' + started + '/完了' + done;
-    }
-
-    var feed = Array.isArray(data.feed) ? data.feed : [];
-    listEl.innerHTML = '';
-    feed.slice(0, shownCount).forEach(function(item){
-      if(!item || !item.ts || !item.label) return;
-      var li = document.createElement('li');
-      var time = document.createElement('time');
-      time.textContent = fmtTime(item.ts);
-      var label = document.createElement('span');
-      label.className = 'label';
-      label.textContent = item.label;
-      li.appendChild(time);
-      li.appendChild(label);
-      listEl.appendChild(li);
+    toPlay.forEach(function(item, i){
+      setTimeout(function(){
+        applyEvent(item);
+      }, isInitial ? i * 220 : i * 500);
     });
-
-    if(feed.length > shownCount){
-      moreBtn.hidden = false;
-    } else {
-      moreBtn.hidden = true;
-    }
-
-    band.classList.add('is-visible');
-    if(feed.length > 0){
-      feedWrap.classList.add('is-visible');
+    if(feed.length){
+      lastFeedTs = feed[0].ts;
     }
   }
 
+  var firstLoad = true;
   function fetchActivity(){
-    fetch('activity.json', {cache:'no-store'})
-      .then(function(res){
-        if(!res.ok) throw new Error('not ok');
-        return res.json();
+    fetch('activity.json?t=' + Date.now(), {cache:'no-store'})
+      .then(function(res){ if(!res.ok) throw new Error('not ok'); return res.json(); })
+      .then(function(data){
+        if(!data || typeof data !== 'object') return;
+        renderHud(data);
+        var feed = Array.isArray(data.feed) ? data.feed : [];
+        renderTicker(feed);
+        playFeedDiff(feed, firstLoad);
+        applyAgents(data.agents);
+        firstLoad = false;
       })
-      .then(render)
-      .catch(function(){
-        // 取得失敗・ファイル欠如: 帯とフィードは非表示のまま何もしない
-      });
+      .catch(function(){ /* 取得失敗時は何もしない。既存表示を維持 */ });
   }
 
-  document.getElementById('liveMoreBtn').addEventListener('click', function(){
-    shownCount += FEED_STEP;
-    if(lastData) render(lastData);
+  function applyAgents(agents){
+    if(!Array.isArray(agents)) return;
+    agents.forEach(function(a){
+      var idx = -1;
+      for(var i=0;i<DEPTS.length;i++){
+        if(DEPTS[i].name === a.dept){ idx = i; break; }
+      }
+      if(idx === -1 || idx === HUB_INDEX) return;
+      var n = nodes[idx];
+      if(!n) return;
+      if(a.state === 'working') n.state = 'working';
+      else if(a.state === 'done') n.state = 'done';
+      if(a.current) n.current = a.current;
+    });
+  }
+
+  /* ================= 動画モーダル ================= */
+  var promoBtn = document.getElementById('promoBtn');
+  var promoOverlay = document.getElementById('promoOverlay');
+  var promoClose = document.getElementById('promoClose');
+  var promoVideo = document.getElementById('promoVideo');
+  promoBtn.addEventListener('click', function(){
+    promoOverlay.classList.add('is-open');
+  });
+  function closePromo(){
+    promoOverlay.classList.remove('is-open');
+    promoVideo.pause();
+  }
+  promoClose.addEventListener('click', closePromo);
+  promoOverlay.addEventListener('click', function(e){
+    if(e.target === promoOverlay) closePromo();
   });
 
+  /* ================= スクロールヒント ================= */
+  var scrollHint = document.getElementById('scrollHint');
+  window.addEventListener('scroll', function(){
+    scrollHint.style.opacity = window.scrollY > 40 ? '0' : '1';
+  });
+  scrollHint.addEventListener('click', function(){
+    document.getElementById('org').scrollIntoView({behavior:'smooth'});
+  });
+
+  /* ================= 初期化 ================= */
+  resize();
+  initBgParticles();
+  requestAnimationFrame(draw);
   fetchActivity();
   setInterval(fetchActivity, 60000);
+
 })();
 </script>
 
