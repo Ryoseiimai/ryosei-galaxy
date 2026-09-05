@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-09-05T23:31:44.555633+09:00",
+  "updated_at": "2026-09-06T00:01:46.263196+09:00",
   "today": {
-    "done": 12,
-    "started": 25,
-    "received": 26
+    "done": 0,
+    "started": 0,
+    "received": 0
   },
   "total_done": 266,
   "feed": [
