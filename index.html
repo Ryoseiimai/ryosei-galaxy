@@ -649,10 +649,15 @@
     // 全リングへ同じ縮小率を掛けて相対的な間隔比を保つ（個別にcapすると
     // 外リングだけ潰れて中リングとの間隔が消え、重なりの原因になるため）。
     var rawRyOuter = defs[0].rxF * W * defs[0].ryF;
-    var scale = rawRyOuter > ryCap ? (ryCap / rawRyOuter) : 1;
+    var ryScale = rawRyOuter > ryCap ? (ryCap / rawRyOuter) : 1;
+    // 外リングのノードが画面外へ出ないよう rx にも上限を設ける（ノード半径+左右余白8pxずつ）。
+    var nodeR = 9;
+    var rxCap = W/2 - 8 - nodeR - 8;
+    var rawRxOuter = defs[0].rxF * W;
+    var rxScale = rawRxOuter > rxCap ? (rxCap / rawRxOuter) : 1;
     return defs.map(function(d){
-      var rx = d.rxF * W;
-      var ry = d.ryF * rx * scale;
+      var rx = d.rxF * W * rxScale;
+      var ry = d.ryF * (d.rxF * W) * ryScale; // ryはrxのスケール変更前の値を基準に保つ（縦横比の意図を維持）
       var arcInfo = buildArcTable(rx, ry);
       return { key:d.key, count:d.count, rx:rx, ry:ry, speed:d.speed, phase:d.phase, table:arcInfo.table, totalArc:arcInfo.totalArc };
     });
@@ -730,6 +735,13 @@
     else if(ang <= Math.PI*1.25) sector = 'left';
     else sector = 'top';
 
+    // 画面端に近く左右配置だとはみ出す場合は上下配置へ切り替える
+    if(sector === 'right' && node.x + r + gap + w > W - 8){
+      sector = (node.y <= CY) ? 'top' : 'bottom';
+    } else if(sector === 'left' && node.x - r - gap - w < 8){
+      sector = (node.y <= CY) ? 'top' : 'bottom';
+    }
+
     var x, y, align;
     if(sector === 'right'){ x = node.x + r + gap; y = node.y + fontSize/3; align = 'left'; }
     else if(sector === 'left'){ x = node.x - r - gap; y = node.y + fontSize/3; align = 'right'; }
@@ -737,7 +749,18 @@
     else { x = node.x; y = node.y - r - gap; align = 'center'; }
 
     var rectX = align === 'left' ? x : (align === 'right' ? x - w : x - w/2);
-    return { x:x, y:y, align:align, rect:{ x:rectX, y:y - fontSize, w:w, h:fontSize } };
+
+    // それでも画面外に出る場合は矩形だけ内側へ平行移動し、ノードへ引き出し線を引く
+    var clampedX = Math.min(Math.max(rectX, 8), Math.max(8, W - 8 - w));
+    var leader = Math.abs(clampedX - rectX) > 0.5;
+    if(leader){
+      if(align === 'left') x = clampedX;
+      else if(align === 'right') x = clampedX + w;
+      else x = clampedX + w/2;
+      rectX = clampedX;
+    }
+
+    return { x:x, y:y, align:align, leader:leader, nodeX:node.x, nodeY:node.y, rect:{ x:rectX, y:y - fontSize, w:w, h:fontSize } };
   }
 
   // このフレームで各ノードのラベルが占める矩形を、実際の描画前に見積もる（省略なし＝フルネーム基準）
@@ -772,42 +795,63 @@
     return { x: anchorX - w/2, y: anchorY - f.nameSize, w: w, h: h };
   }
 
-  function rectsOverlap(a, b){
-    return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+  function rectsOverlap(a, b, pad){
+    pad = pad || 0;
+    return !(a.x + a.w + pad <= b.x || b.x + b.w + pad <= a.x || a.y + a.h + pad <= b.y || b.y + b.h + pad <= a.y);
   }
 
-  // 重なる瞬間があれば文字を切らず、該当ノードの角度だけを一時的に±8度まで振って回避する
+  function refreshNodePosition(n){
+    var ang = n.baseAngle + (n.offset || 0);
+    n.x = CX + Math.cos(ang) * n.rx;
+    n.y = CY + Math.sin(ang) * n.ry;
+  }
+
+  // 重なる瞬間があれば文字を切らず、該当ノードの角度だけを一時的に±8/±15度まで振って回避する。
+  // 1フレームに複数パス回して収束を早め、1フレームだけ重なって見えるチラつきを防ぐ。
   function resolveLabelOverlaps(){
     var movable = nodes.filter(function(n){ return !n.isHub; });
     var hub = nodes[HUB_INDEX];
+    var nudgeMax = IS_MOBILE_LAYOUT ? ANGLE_NUDGE_MAX_MOBILE : ANGLE_NUDGE_MAX_DESKTOP;
+    var PASSES = 4;
+    var PAD = 3; // 早め（接触前）に反応させる安全マージン
     var overlapping = {};
-    for(var a=0;a<movable.length;a++){
-      var ra = estimateLabelRect(movable[a]);
-      var hitAny = false;
-      for(var b=a+1;b<movable.length;b++){
-        var rb = estimateLabelRect(movable[b]);
-        if(rectsOverlap(ra, rb)){
-          hitAny = true;
-          overlapping[movable[b].def.key] = true;
-          // 片方は角度を増やし、片方は減らして引き離す
-          movable[a].offset -= ANGLE_NUDGE_STEP;
-          movable[b].offset += ANGLE_NUDGE_STEP;
+
+    for(var pass=0; pass<PASSES; pass++){
+      overlapping = {};
+      for(var a=0;a<movable.length;a++){
+        var ra = estimateLabelRect(movable[a]);
+        var hitAny = false;
+        for(var b=a+1;b<movable.length;b++){
+          var rb = estimateLabelRect(movable[b]);
+          if(rectsOverlap(ra, rb, PAD)){
+            hitAny = true;
+            overlapping[movable[b].def.key] = true;
+            movable[a].offset -= ANGLE_NUDGE_STEP;
+            movable[b].offset += ANGLE_NUDGE_STEP;
+            movable[a].offset = Math.max(-nudgeMax, Math.min(nudgeMax, movable[a].offset));
+            movable[b].offset = Math.max(-nudgeMax, Math.min(nudgeMax, movable[b].offset));
+            refreshNodePosition(movable[a]);
+            refreshNodePosition(movable[b]);
+          }
         }
+        var rHub = estimateLabelRect(hub);
+        if(rectsOverlap(ra, rHub, PAD)){
+          hitAny = true;
+          movable[a].offset += (movable[a].offset >= 0 ? ANGLE_NUDGE_STEP : -ANGLE_NUDGE_STEP);
+          movable[a].offset = Math.max(-nudgeMax, Math.min(nudgeMax, movable[a].offset));
+          refreshNodePosition(movable[a]);
+        }
+        if(hitAny) overlapping[movable[a].def.key] = true;
       }
-      var rHub = estimateLabelRect(hub);
-      if(rectsOverlap(ra, rHub)){
-        hitAny = true;
-        // ハブは動かせないので自分だけ外側へ逃げる
-        movable[a].offset += (movable[a].offset >= 0 ? ANGLE_NUDGE_STEP : -ANGLE_NUDGE_STEP);
-      }
-      if(hitAny) overlapping[movable[a].def.key] = true;
+      if(Object.keys(overlapping).length === 0) break;
     }
+
     movable.forEach(function(n){
       if(!overlapping[n.def.key]){
         n.offset *= ANGLE_NUDGE_EASE; // 衝突していないノードは徐々に定位置へ戻す
+        n.offset = Math.max(-nudgeMax, Math.min(nudgeMax, n.offset));
+        refreshNodePosition(n);
       }
-      var nudgeMax = IS_MOBILE_LAYOUT ? ANGLE_NUDGE_MAX_MOBILE : ANGLE_NUDGE_MAX_DESKTOP;
-      n.offset = Math.max(-nudgeMax, Math.min(nudgeMax, n.offset));
     });
   }
 
@@ -1109,6 +1153,7 @@
 
     // ノード描画
     window.__RG_DEBUG.labelRects = []; // このフレームで実際に描いたラベル矩形（検証用）
+    window.__RG_DEBUG.nodes = nodes.map(function(n){ return {key:n.def.key, ring:n.ringKey, x:n.x, y:n.y, rx:n.rx, ry:n.ry, angle:n.baseAngle, offset:n.offset}; });
     for(i=0;i<nodes.length;i++){
       var node = nodes[i];
       node.pulse += (node.state === 'working' ? 0.05 : 0.018) * (dt/16.7);
@@ -1195,6 +1240,15 @@
 
         if(IS_MOBILE_LAYOUT){
           var placement = mobileLabelPlacement(node, nameWidth, f.nameSize);
+          if(placement.leader){
+            // ラベルを画面内に収めるため平行移動した分、ノードへ引き出し線を1本引く
+            ctx.strokeStyle = 'rgba(240,192,96,0.45)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(placement.nodeX, placement.nodeY);
+            ctx.lineTo(placement.rect.x + placement.rect.w/2, placement.y - f.nameSize/2);
+            ctx.stroke();
+          }
           ctx.textAlign = placement.align;
           ctx.fillStyle = 'rgba(255,255,255,0.95)';
           ctx.fillText(nameText, placement.x, placement.y);
